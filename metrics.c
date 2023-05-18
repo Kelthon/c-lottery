@@ -3,16 +3,22 @@
 
 #include "metrics.h"
 
-double metrics_function_duration(void (* function)()) {
+double metrics_serial_function_duration(void (* function)(int), int arg) {
     double start_time, end_time;
 
     start_time = omp_get_wtime();
-    printf("started at: %lf\n\n", start_time);
-
-    function();
-
+        function(arg);
     end_time = omp_get_wtime();
-    printf("\nended at: %lf\n", start_time);
+
+    return end_time - start_time;
+}
+
+double metrics_parallel_function_duration(void (* function)(int, int), int arg_a, int arg_b) {
+    double start_time, end_time;
+
+    start_time = omp_get_wtime();
+        function(arg_a, arg_b);
+    end_time = omp_get_wtime();
 
     return end_time - start_time;
 }

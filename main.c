@@ -65,7 +65,9 @@ int main(int argc, char **argv) {
 
     srand(time(NULL));
 
-    printf("serial program duration: %lf seconds\n", metrics_function_duration(serial_lottery));
+    printf("sorting please wait...\n");
+    printf("serial program duration: %lf seconds\n",
+           metrics_serial_function_duration(serial_lottery, 6));
 
     return 0;
 }
