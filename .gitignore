@@ -1,6 +1,6 @@
 # Code::BLocks
-.depend
-.layout
+*.depend
+*.layout
 
 # Prerequisites
 *.d
