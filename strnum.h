@@ -1,8 +1,11 @@
 #ifndef STRNUM_H_INCLUDED
 #define STRNUM_H_INCLUDED
 
-char * strnum_time(int number);
-char * strnum_datetime(int number);
+#define TYPE_YEAR 31560000
+#define TYPE_DAY 86400
+#define TYPE_HOUR 3600
+#define TYPE_MINUTE 60
+#define TYPE_SECOND 1
 
 /** Returns decimal part of a double */
 double strnum_decimal_part(double number);
@@ -18,5 +21,11 @@ char * strnum_int(int number, int partition_size, char separator);
 
 /** Returns a double number notation formatted string */
 char * strnum_double(double number, int partition_size, char separator, int decimal_size, char decimal_separator);
+
+/** Returns a date and time formatted string */
+char * strnum_datetime(double datetime);
+
+/** Returns a elapsed time formatted string */
+char * strnum_elapsed_time(double elapsed_time);
 
 #endif // STRNUM_H_INCLUDED
