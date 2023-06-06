@@ -104,9 +104,3 @@ char *bet_numbers_to_string(int *bet_numbers, int bet_numbers_count) {
 
     return str;
 }
-
-// TODO
-void bet_print(int *bet_numbers);
-
-// TODO
-void bet_print_result(int *bet_numbers, int *correct_score);

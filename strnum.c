@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <time.h>
 
 #include "strnum.h"
@@ -69,7 +70,7 @@ char * strnum_double(double number, int partition_size, char separator, int deci
 }
 
 char * strnum_datetime(double datetime) {
-    int seconds = (int) datetime;
+    time_t seconds = (int) datetime;
     struct tm *dt = localtime(&seconds);
     char dt_format[] = "%02d/%02d/%02d %02d:%02d:%02.3f";
     int string_size = snprintf(NULL, 0, dt_format, dt->tm_mday, dt->tm_mon + 1, dt->tm_year + 1900, dt->tm_hour, dt->tm_min, dt->tm_sec + strnum_decimal_part(datetime));
