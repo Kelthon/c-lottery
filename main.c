@@ -1,3 +1,4 @@
+#include <omp.h>
 #include <time.h>
 #include <math.h>
 #include <stdio.h>
@@ -120,6 +121,11 @@ int main(int argc, char **argv) {
     free(num_bets);
     num_bets = NULL;
 
+    double start_time = omp_get_wtime();
+    char *dt = strnum_datetime(start_time);
+    printf("Started at %s\n", dt);
+    free(dt);
+
 //    double **result = compare_get_random_result_array();
 
     double **result = compare_get_result_array(COMPARE_MAXNUM_TESTS);
@@ -130,6 +136,16 @@ int main(int argc, char **argv) {
     for(int i = 0; i < 4; i++) free(result[i]);
     free(result);
     result = NULL;
+
+    double end_time = omp_get_wtime();
+    dt = strnum_datetime(end_time);
+    printf("Ended at %s\n", dt);
+    free(dt);
+
+    dt = strnum_elapsed_time(end_time - start_time);
+    printf("Tests duration: %s", dt);
+    free(dt);
+    dt = NULL;
 
     return 0;
 }
