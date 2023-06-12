@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "metrics.h": "c",
+        "compare.h": "c",
+        "strnum.h": "c",
+        "bet.h": "c"
+    }
+}
