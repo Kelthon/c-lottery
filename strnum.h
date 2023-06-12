@@ -6,6 +6,10 @@
 #define TYPE_HOUR 3600
 #define TYPE_MINUTE 60
 #define TYPE_SECOND 1
+#define STRNUM_DEFAULT_PARTITION_SIZE 3
+#define STRNUM_DEFAULT_PARTITION_SEPARATOR 46
+#define STRNUM_DEFAULT_DECIMAL_PARTITION_SIZE 2
+#define STRNUM_DEFAULT_DECIMAL_PARTITION_SEPARATOR 44
 
 /** Returns decimal part of a double */
 double strnum_decimal_part(double number);
