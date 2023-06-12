@@ -101,6 +101,13 @@ void compare_x7_test() {
     compare_parallel_lottery_attempts(results[result_counter]);
 }
 
+int compare_get_percent(int value) {
+    int min = 0;
+    int max = COMPARE_MAXNUM_TESTS;
+
+    return (int)((value - min) / (max - min) * 100);
+}
+
 char *compare_get_func_name(int n_threads) {
     int size;
     char *str;
@@ -123,6 +130,7 @@ char *compare_get_func_name(int n_threads) {
 MetricParams **compare_get_tests(int num_tests) {
     compare_set_num_dozens(6);
     compare_set_scores(num_tests);
+    double factor_percent = 100 / COMPARE_MAXNUM_TESTS;
 
     MetricParams **result = (MetricParams **) calloc(4, sizeof(MetricParams *));
     MetricParams *x1 = (MetricParams *) calloc(num_tests, sizeof(MetricParams));
@@ -148,7 +156,7 @@ MetricParams **compare_get_tests(int num_tests) {
         x7[i].speed_up = metrics_speed_up(x1[i].duration, x7[i].duration);
         x7[i].efficiency = metrics_speed_up(x7[i].speed_up, 7);
 
-        printf("[%d] - done\n", i + 1);
+        printf("[%3d %%] - done\n", compare_get_percent(i));
         printf("\talgorithm number of tests duration speedup efficiency\n");
         printf("\t%9s %15d %8.2lf %7.2lf %10.2lf\n", "serial", COMPARE_MAXNUM_TESTS, x1[i].duration, x1[i].speed_up, x1[i].efficiency);
         printf("\t%9s %15d %8.2lf %7.2lf %10.2lf\n", "3x thr", COMPARE_MAXNUM_TESTS, x3[i].duration, x3[i].speed_up, x3[i].efficiency);
