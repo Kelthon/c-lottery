@@ -1,104 +1,135 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
 #include <time.h>
-#include <omp.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
 
 #include "bet.h"
 #include "strnum.h"
 #include "metrics.h"
+#include "compare.h"
 
-void serial_lottery(int num_dozens) {
-    int counter_rounds = 0;
-    int round_current_hits = 0;
-    int * round_guess = NULL;
-    int * round_correct_score = NULL;
+#define LINE_LEFT 0
+#define LINE_RIGHT 1
+#define LINE_CENTER 2
+#define LINE_COLUMNS 78
+#define LINE_ASCII_ROWS 8
+#define LINE_SEPARATOR 45
+#define LINE_CHAR_SPACE 32
+#define LINE_CHAR_PERCENT 37
 
-    while(round_current_hits != num_dozens) {
-        round_guess = bet_get_numbers(num_dozens, BET_MIN_VALUE, BET_MAX_VALUE);
-        round_correct_score = bet_get_numbers(num_dozens, BET_MIN_VALUE, BET_MAX_VALUE);
-
-        round_current_hits = bet_get_hits(round_guess, round_correct_score, num_dozens);
-
-        counter_rounds++;
-
-        free(round_guess);
-        round_guess = NULL;
-        free(round_correct_score);
-        round_correct_score = NULL;
-    }
-
-    // return counter_rounds;
+void print_separation_line() {
+    printf("\n");
+    for(int i = 0; i < LINE_COLUMNS; i++) printf("%c", LINE_SEPARATOR);
+    printf("\n\n");
 }
 
-void parallel_lottery(int num_dozens, int threads) {
-    int was_already_hinted = 0;
-    int counter_rounds = 0;
+void print_ascii_art() {
+    int ascii_art_size = LINE_COLUMNS * LINE_ASCII_ROWS;
+    char ascii_art[ascii_art_size+1];
+    ascii_art[ascii_art_size] = 0;
 
-    #pragma omp parallel num_threads(threads)
-    {
-        int round_current_hits = 0;
-        int * round_guess = NULL;
-        int * round_correct_score = NULL;
+    FILE *fp = fopen("ascii_art.txt", "r");
 
-        printf("%dth accesss %s\n", omp_get_thread_num(), was_already_hinted? "winned" : "lost");
+        printf("\n");
+        fread(ascii_art, sizeof(char), ascii_art_size, fp);
+        printf("%s",ascii_art);
+        printf("\n");
 
-        #pragma omp parallel reduction(+:counter_rounds)
-        while(round_current_hits != num_dozens) {
+    fclose(fp);
+}
 
-            if(was_already_hinted) {
+int calc_middle_tabulation(const char* string) {
+    int tabulation;
+    int size = snprintf(NULL, 0, "%s", string) + 1;
+    int middle = LINE_COLUMNS / 2;
 
-                break;
-            }
+    tabulation = (int) ceil(middle + size / 2.0);
 
-            round_guess = bet_get_numbers(num_dozens, BET_MIN_VALUE, BET_MAX_VALUE);
-            round_correct_score = bet_get_numbers(num_dozens, BET_MIN_VALUE, BET_MAX_VALUE);
+    return tabulation;
+}
 
-            round_current_hits = bet_get_hits(round_guess, round_correct_score, num_dozens);
+void print_line(int position, const char *string) {
+    switch (position) {
+        case LINE_CENTER:
+            printf("%*s\n", calc_middle_tabulation(string), string);
+            break;
 
-            counter_rounds++;
+        case LINE_RIGHT:
+            printf("%*s\n", LINE_COLUMNS, string);
+            break;
 
-            free(round_guess);
-            round_guess = NULL;
-            free(round_correct_score);
-            round_correct_score = NULL;
-        }
-
-        #pragma omp critical
-        {
-            was_already_hinted = 1;
-        }
+        default:
+            printf("%-*s\n", LINE_COLUMNS, string);
+            break;
     }
-    // return counter_rounds;
+}
+
+int count_format_args(const char* format) {
+    char c = 0;
+    int i = 0, argc = 0;
+
+    do {
+        c = format[i];
+
+        if(c == LINE_CHAR_PERCENT && format[i + 1] != LINE_CHAR_PERCENT && format[i + 1] != LINE_CHAR_SPACE) argc++;
+
+        i++;
+    } while(c != 0);
+
+    return argc;
+}
+
+/* void pl(const char* format, ...) {
+ *     int argc = count_format_args(format);
+ *
+ *    va_list argv;
+ *    va_start(argv, argc);
+ *        va_arg(argv, int);
+ *    va_end();
+ *}
+ */
+
+void print_spaced_line(int argc, char **argv) {
+    char line[LINE_COLUMNS + 1];
+    int size = snprintf(NULL, 0, "%s", argv[0]) + 1;
+    int line_overflow = size - LINE_COLUMNS;
+
+    if(line_overflow > 0) {
+        for(int i = 0, j = 0; i <= line_overflow; i++, j++) {
+            line[j] = (j == line_overflow) ? '\0' : argv[0][i];
+        }
+        printf("%s\n", line);
+    }
 }
 
 int main(int argc, char **argv) {
-    double serial_duration, parallel_duration_3th, parallel_duration_5th, parallel_duration_7th;
-    char *formated_serial_duration, *formated_parallel_duration_3th, *formated_parallel_duration_5th, *formated_parallel_duration_7th;
-
     srand(time(NULL));
-    printf("sorting bets, please wait ...\n");
-    
-    serial_duration = metrics_serial_function_duration(serial_lottery, 6);
-    // parallel_duration_3th = metrics_parallel_function_duration(parallel_lottery, 6, 3);
-    // parallel_duration_5th = metrics_parallel_function_duration(parallel_lottery, 6, 5);
-    parallel_duration_7th = metrics_parallel_function_duration(parallel_lottery, 6, 7);
 
-    formated_serial_duration = strnum_elapsed_time(serial_duration);
-    // formated_parallel_duration_3th = strnum_elapsed_time(parallel_duration_3th);
-    // formated_parallel_duration_5th = strnum_elapsed_time(parallel_duration_5th);
-    formated_parallel_duration_7th = strnum_elapsed_time(parallel_duration_7th);
+    print_ascii_art();
+    print_separation_line();
 
-    printf("serial program duration: %s\n", formated_serial_duration);
-    // printf("%d threads program duration: %s\n", 3, formated_parallel_duration_3th);
-    // printf("%d threads program duration: %s\n", 5, formated_parallel_duration_5th);
-    printf("%d threads program duration: %s\n", 7, formated_parallel_duration_7th);
+    char *num_bets = strnum_int(COMPARE_MAXNUM_TESTS, STRNUM_DEFAULT_PARTITION_SIZE, STRNUM_DEFAULT_PARTITION_SEPARATOR);
+    int title_size = snprintf(NULL, 0, "Sorting %s bets", num_bets) + 1;
+    char title[title_size];
 
+    snprintf(title, title_size, "Sorting %s bets", num_bets);
+    print_line(LINE_CENTER, title);
+    print_line(LINE_CENTER, "Please Wait");
 
-    free(formated_serial_duration);
-    // free(formated_parallel_duration_3th);
-    // free(formated_parallel_duration_5th);
-    free(formated_parallel_duration_7th);
+    free(num_bets);
+    num_bets = NULL;
+
+//    double **result = compare_get_random_result_array();
+
+    double **result = compare_get_result_array(COMPARE_MAXNUM_TESTS);
+    compare_print_result_array(result);
+//    compare_write_csv("c-lottery.csv", result);
+    print_line(LINE_CENTER, "Done");
+
+    for(int i = 0; i < 4; i++) free(result[i]);
+    free(result);
+    result = NULL;
 
     return 0;
 }
