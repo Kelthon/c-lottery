@@ -3,6 +3,7 @@
 	<FileVersion major="1" minor="6" />
 	<Project>
 		<Option title=".\c-lottery" />
+		<Option makefile="makefile" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
@@ -35,6 +36,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="bet.h" />
+		<Unit filename="compare.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="compare.h" />
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>

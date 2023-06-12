@@ -106,7 +106,7 @@ char * strnum_concat(char *string, char *concat_string, char *concat_format) {
     return result;
 }
 
-char *strnum_time(double seconds, int type, char * format, int plural) {
+char * strnum_time(double seconds, int type, char * format, int plural) {
     int string_size;
     char control = 's';
     char *string = NULL;
