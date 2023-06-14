@@ -10,29 +10,29 @@ double strnum_decimal_part(double number) {
     return (number - number_part);
 }
 
-int strnum_num_partitions(int strnum_size, int partition_size) {
+int strnum_num_partitions(int strnum_size) {
     int partitions, splits, fix_factor;
 
-    splits = (strnum_size / partition_size);
+    splits = (strnum_size / STRNUM_DEFAULT_PARTITION_SIZE);
 
-    fix_factor = (strnum_size % partition_size == 0) ? 1 : 0;
+    fix_factor = (strnum_size % STRNUM_DEFAULT_PARTITION_SIZE == 0) ? 1 : 0;
 
     partitions = splits - fix_factor;
 
     return partitions;
 }
 
-int strnum_int_length(int number, int partition_size) {
+int strnum_int_length(int number) {
     int size = snprintf(NULL, 0, "%d", number);
-    int num_partitions = strnum_num_partitions(size, partition_size);
+    int num_partitions = strnum_num_partitions(size);
 
     return size + num_partitions + 1;
 }
 
-char * strnum_int(int number, int partition_size, char separator) {
+char * strnum_int(int number) {
     int next_partition_distance = 4;
     int string_base_size = snprintf(NULL, 0, "%d", number);
-    int size = strnum_int_length(number, partition_size);
+    int size = strnum_int_length(number);
     char *string = (char *) calloc(size, sizeof(char));
     char aux[string_base_size + 1];
 
@@ -40,7 +40,7 @@ char * strnum_int(int number, int partition_size, char separator) {
 
     for(int i = size - 1, j = string_base_size; i >= 0; i--) {
         if(next_partition_distance == 0) {
-            string[i] = separator;
+            string[i] = STRNUM_DEFAULT_PARTITION_SEPARATOR;
             next_partition_distance = 3;
         } else {
             string[i] = aux[j];
@@ -52,19 +52,19 @@ char * strnum_int(int number, int partition_size, char separator) {
     return string;
 }
 
-char * strnum_double(double number, int partition_size, char separator, int decimal_size, char decimal_separator) {
-    int string_base_size = snprintf(NULL, 0, "%.*lf", decimal_size, number);
-    int num_partitions = strnum_num_partitions(string_base_size - decimal_size, partition_size);
+char * strnum_double(double number) {
+    int string_base_size = snprintf(NULL, 0, "%.*lf", STRNUM_DEFAULT_DECIMAL_PARTITION_SIZE, number);
+    int num_partitions = strnum_num_partitions(string_base_size - STRNUM_DEFAULT_DECIMAL_PARTITION_SIZE);
     int size = string_base_size + num_partitions + 1;
 
     double decimal_part = strnum_decimal_part(number);
     double fixed_number = (decimal_part > 0) ? number - decimal_part : number;
-    int dec_part = decimal_part * (pow(10, decimal_size) * (decimal_part > 0 ? 1 : -1));
+    int dec_part = decimal_part * (pow(10, STRNUM_DEFAULT_DECIMAL_PARTITION_SIZE) * (decimal_part > 0 ? 1 : -1));
 
     char * string = (char *) calloc(size, sizeof(char));
-    char *aux = strnum_int(fixed_number, partition_size, separator);
+    char *aux = strnum_int(fixed_number);
 
-    snprintf(string, size, "%s%c%d", aux, decimal_separator, dec_part);
+    snprintf(string, size, "%s%c%d", aux, STRNUM_DEFAULT_DECIMAL_PARTITION_SEPARATOR, dec_part);
 
     return string;
 }
@@ -81,32 +81,40 @@ char * strnum_datetime(double datetime) {
     return string;
 }
 
-char * strnum_concat(char *string, char *concat_string, char *concat_format) {
+char *strnum_str_copy(const char *string) {
+    int copy_size;
+    char *copy = NULL;
+
+    if(string != NULL) {
+        copy_size = snprintf(NULL, 0, "%s", string) + 1;
+        copy = (char *) calloc(copy_size, sizeof(char));
+        snprintf(copy, copy_size, "%s", string);
+    }
+
+    return copy;
+}
+
+char * strnum_str_concat(char *first_string, char *second_string, char *concat_format) {
     int result_size;
     char *result = NULL;
 
-    if(string == NULL) {
-        result_size = snprintf(NULL, 0, "%s", concat_string) + 1;
-        result = (char *) calloc(result_size, sizeof(char));
-        snprintf(result, result_size, "%s", concat_string);
-    }
 
-    else if(concat_string == NULL) {
-        result_size = snprintf(NULL, 0, "%s", string) + 1;
-        result = (char *) calloc(result_size, sizeof(char));
-        snprintf(result, result_size, "%s", string);
-    }
+
+    if(first_string == NULL) result = strnum_str_copy(second_string);
+
+    else if(second_string == NULL) result = strnum_str_copy(first_string);
 
     else {
-        result_size = snprintf(NULL, 0, concat_format, string, concat_string)  + 1;
+
+        result_size = snprintf(NULL, 0, concat_format, first_string, second_string)  + 1;
         result = (char *) calloc(result_size, sizeof(char));
-        snprintf(result, result_size, concat_format, string, concat_string);
+        snprintf(result, result_size, concat_format, first_string, second_string);
     }
 
     return result;
 }
 
-char * strnum_time(double seconds, int type, char * format, int plural) {
+char * strnum_time(double seconds, int type, char * format, int allow_plural) {
     int string_size;
     char control = 's';
     char *string = NULL;
@@ -117,7 +125,7 @@ char * strnum_time(double seconds, int type, char * format, int plural) {
 
         string_size = snprintf(NULL, 0, format, dtlf) + 1;
 
-        if(plural && dtlf > 1) {
+        if(allow_plural && dtlf > 1) {
             string_size++;
             string = (char *) calloc(string_size, sizeof(char));
             snprintf(string, string_size, format, dtlf);
@@ -135,7 +143,7 @@ char * strnum_time(double seconds, int type, char * format, int plural) {
 
         string_size = snprintf(NULL, 0, format, dt) + 1;
 
-        if(plural && dt > 1) {
+        if(allow_plural && dt > 1) {
             string_size++;
             string = (char *) calloc(string_size, sizeof(char));
             snprintf(string, string_size, format, dt);
@@ -149,6 +157,27 @@ char * strnum_time(double seconds, int type, char * format, int plural) {
     return string;
 }
 
+void aux_elapsed_time_concater(double *seconds, int type, char *string, char *format, int allow_plural) {
+    char *next, *previous;
+    int secs = (int) *seconds;
+
+    if((secs / type) > 0) {
+        if(type == TYPE_SECOND) next = strnum_time(*seconds, type, format, allow_plural);
+        else next = strnum_time(secs, type, format, allow_plural);
+        
+        previous = string;
+
+        string = strnum_str_concat(previous, next, "%s, %s");
+        *seconds = secs % type;
+        
+        free(previous);
+        previous = NULL;
+
+        free(next);
+        next = NULL;
+    }
+}
+
 char * strnum_elapsed_time(double elapsed_time) {
 
     char d_format[] = "%02d day";
@@ -156,42 +185,15 @@ char * strnum_elapsed_time(double elapsed_time) {
     char m_format[] = "%02d minute";
     char s_format[] = "%02.3f seconds";
 
-    double secs;
-    char *string = NULL, *aux;
-    int seconds = (int) elapsed_time;
+    char *string = NULL;
+    double secs = elapsed_time;
+    
+    aux_elapsed_time_concater(&secs, TYPE_DAY, string, d_format, 1);
+    aux_elapsed_time_concater(&secs, TYPE_HOUR, string, h_format, 1);
+    aux_elapsed_time_concater(&secs, TYPE_MINUTE, string, m_format, 1);
+    aux_elapsed_time_concater(&secs, TYPE_SECOND, string, s_format, 1);
 
-
-    if((seconds / TYPE_DAY) > 0) {
-        aux = strnum_time(seconds, TYPE_DAY, d_format, 1);
-        string = strnum_concat(string, aux, "%s, %s");
-        seconds %= TYPE_DAY;
-        free(aux);
-        aux = NULL;
-    }
-
-    if((seconds / TYPE_HOUR) > 0) {
-        aux = strnum_time(seconds, TYPE_HOUR, h_format, 1);
-        string = strnum_concat(string, aux, "%s, %s");
-        seconds %= TYPE_HOUR;
-        free(aux);
-        aux = NULL;
-    }
-
-    if((seconds / TYPE_MINUTE) > 0) {
-        aux = strnum_time(seconds, TYPE_MINUTE, m_format, 1);
-        string = strnum_concat(string, aux, "%s, %s");
-        seconds %= TYPE_MINUTE;
-        secs = seconds + strnum_decimal_part(elapsed_time);
-        free(aux);
-        aux = NULL;
-    }
-
-    if(seconds > 0 || elapsed_time == 0) {
-        aux = strnum_time(secs, TYPE_SECOND, s_format, 0);
-        string = strnum_concat(string, aux, "%s, %s");
-        free(aux);
-        aux = NULL;
-    }
+    printf("%s\n", string);
 
     return string;
 }

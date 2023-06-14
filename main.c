@@ -3,147 +3,95 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
+#include <windows.h>
 
 #include "bet.h"
 #include "strnum.h"
 #include "metrics.h"
 #include "compare.h"
 
-#define LINE_LEFT 0
-#define LINE_RIGHT 1
-#define LINE_CENTER 2
-#define LINE_COLUMNS 78
-#define LINE_ASCII_ROWS 8
-#define LINE_SEPARATOR 45
-#define LINE_CHAR_SPACE 32
-#define LINE_CHAR_PERCENT 37
-
-void print_separation_line() {
-    printf("\n");
-    for(int i = 0; i < LINE_COLUMNS; i++) printf("%c", LINE_SEPARATOR);
-    printf("\n\n");
-}
-
-void print_ascii_art() {
-    int ascii_art_size = LINE_COLUMNS * LINE_ASCII_ROWS;
-    char ascii_art[ascii_art_size+1];
-    ascii_art[ascii_art_size] = 0;
-
-    FILE *fp = fopen("ascii_art.txt", "r");
-
-        printf("\n");
-        fread(ascii_art, sizeof(char), ascii_art_size, fp);
-        printf("%s",ascii_art);
-        printf("\n");
-
-    fclose(fp);
-}
-
-int calc_middle_tabulation(const char* string) {
-    int tabulation;
-    int size = snprintf(NULL, 0, "%s", string) + 1;
-    int middle = LINE_COLUMNS / 2;
-
-    tabulation = (int) ceil(middle + size / 2.0);
-
-    return tabulation;
-}
-
-void print_line(int position, const char *string) {
-    switch (position) {
-        case LINE_CENTER:
-            printf("%*s\n", calc_middle_tabulation(string), string);
-            break;
-
-        case LINE_RIGHT:
-            printf("%*s\n", LINE_COLUMNS, string);
-            break;
-
-        default:
-            printf("%-*s\n", LINE_COLUMNS, string);
-            break;
-    }
-}
-
-int count_format_args(const char* format) {
-    char c = 0;
-    int i = 0, argc = 0;
-
-    do {
-        c = format[i];
-
-        if(c == LINE_CHAR_PERCENT && format[i + 1] != LINE_CHAR_PERCENT && format[i + 1] != LINE_CHAR_SPACE) argc++;
-
-        i++;
-    } while(c != 0);
-
-    return argc;
-}
-
-/* void pl(const char* format, ...) {
- *     int argc = count_format_args(format);
- *
- *    va_list argv;
- *    va_start(argv, argc);
- *        va_arg(argv, int);
- *    va_end();
- *}
- */
-
-void print_spaced_line(int argc, char **argv) {
-    char line[LINE_COLUMNS + 1];
-    int size = snprintf(NULL, 0, "%s", argv[0]) + 1;
-    int line_overflow = size - LINE_COLUMNS;
-
-    if(line_overflow > 0) {
-        for(int i = 0, j = 0; i <= line_overflow; i++, j++) {
-            line[j] = (j == line_overflow) ? '\0' : argv[0][i];
-        }
-        printf("%s\n", line);
-    }
-}
-
 int main(int argc, char **argv) {
     srand(time(NULL));
 
-    print_ascii_art();
-    print_separation_line();
+    char * dt;
+    char line[100];
+    double program_start_time, program_end_time;
+    
+    compare_print_ascii_art();
+    compare_print_separation_line();
 
-    char *num_bets = strnum_int(COMPARE_MAXNUM_TESTS, STRNUM_DEFAULT_PARTITION_SIZE, STRNUM_DEFAULT_PARTITION_SEPARATOR);
-    int title_size = snprintf(NULL, 0, "Sorting %s bets", num_bets) + 1;
-    char title[title_size];
+    dt = strnum_int(COMPARE_NUMBER_OF_TESTS);
+    snprintf(line, 100, "Sorting %s Bets", dt);
+    compare_print_line(LINE_CENTER, line);
+    compare_print_line(LINE_CENTER, "Please Wait\n");
 
-    snprintf(title, title_size, "Sorting %s bets", num_bets);
-    print_line(LINE_CENTER, title);
-    print_line(LINE_CENTER, "Please Wait");
-
-    free(num_bets);
-    num_bets = NULL;
-
-    double start_time = omp_get_wtime();
-    char *dt = strnum_datetime(start_time);
-    printf("Started at %s\n", dt);
     free(dt);
+    program_start_time = omp_get_wtime();
+    dt = strnum_datetime(program_start_time);
+    snprintf(line, 100, "Test start at '%s'", dt);
+    compare_print_line(LINE_CENTER, line);
 
-//    double **result = compare_get_random_result_array();
+    int **bet_array = compare_set_scores();
+    double times_avarage[4] = {0.0, 0.0, 0.0, 0.0};
+    double speedup_avarage[4] = {1.0, 0.0, 0.0, 0.0};
 
-    double **result = compare_get_result_array(COMPARE_MAXNUM_TESTS);
-    compare_print_result_array(result);
-//    compare_write_csv("c-lottery.csv", result);
-    print_line(LINE_CENTER, "Done");
+    for(int i = 0; i < COMPARE_NUMBER_OF_TESTS; i++) {
+        double start_time, end_time;
 
-    for(int i = 0; i < 4; i++) free(result[i]);
-    free(result);
-    result = NULL;
+        // if(i != 0) {
+        //     printf("%8s %8s %8s %8s\n","N", "threads", "time", "speedup");
+        //     printf("---------------------------------------\n");
+        //     for (int i = 0, j = 1; i < 4; i++, j += 2) {
+        //         printf("%8d %8d %8.2lf %8.2lf\n", COMPARE_NUMBER_OF_TESTS, j, times_avarage[i], speedup_avarage[i]);
+        //     }
+        // }
 
-    double end_time = omp_get_wtime();
-    dt = strnum_datetime(end_time);
-    printf("Ended at %s\n", dt);
+        printf("[ %d%% ] - completed\n", compare_get_percentage(i));
+
+        start_time = omp_get_wtime();
+           serial_program(bet_array[i]);
+        end_time = omp_get_wtime();
+        times_avarage[0] += (end_time - start_time) / COMPARE_NUMBER_OF_TESTS; 
+
+        start_time = omp_get_wtime();
+             parallel_program(bet_array[i], 3);
+        end_time = omp_get_wtime();
+        times_avarage[1] += (end_time - start_time) / COMPARE_NUMBER_OF_TESTS; 
+        speedup_avarage[1] += metrics_speedup(times_avarage[0], times_avarage[1]) / COMPARE_NUMBER_OF_TESTS; 
+
+
+        start_time = omp_get_wtime();
+           parallel_program(bet_array[i], 5);
+        end_time = omp_get_wtime();
+        times_avarage[2] += (end_time - start_time) / COMPARE_NUMBER_OF_TESTS;
+        speedup_avarage[2] += metrics_speedup(times_avarage[0], times_avarage[2]) / COMPARE_NUMBER_OF_TESTS; 
+
+        start_time = omp_get_wtime();
+           parallel_program(bet_array[i], 7);
+        end_time = omp_get_wtime();
+        times_avarage[3] += (end_time - start_time) / COMPARE_NUMBER_OF_TESTS;
+        speedup_avarage[3] += metrics_speedup(times_avarage[0], times_avarage[3]) / COMPARE_NUMBER_OF_TESTS;  
+    }
+
+    compare_delete_scores(bet_array);
+
+    printf("\n\n");
+    compare_print_line(LINE_CENTER, "Averages");
+    compare_print_line(LINE_CENTER, "        N   threads   time  speedup    ");
+    compare_print_line(LINE_CENTER, "---------------------------------------");
+    for (int i = 0, j = 1; i < 4; i++, j += 2) {
+        snprintf(line, 100, "%3d %9d %6.2lf %6.2lf", COMPARE_NUMBER_OF_TESTS, j, times_avarage[i], speedup_avarage[i]);
+        compare_print_line(LINE_CENTER, line);
+    }
+    
     free(dt);
-
-    dt = strnum_elapsed_time(end_time - start_time);
-    printf("Tests duration: %s", dt);
+    program_end_time = omp_get_wtime();
+    dt = strnum_datetime(program_end_time);
+    printf("\n\n");
+    snprintf(line, 100, "test ended at '%s'", dt);
+    compare_print_line(LINE_CENTER, line);
+    printf("\n\n");
+    
     free(dt);
     dt = NULL;
 

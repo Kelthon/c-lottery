@@ -15,16 +15,22 @@
 double strnum_decimal_part(double number);
 
 /** Returns the number of partitions in a size */
-int strnum_num_partitions(int strnum_size, int partition_size);
+int strnum_num_partitions(int strnum_size);
 
 /** Returns a size of a strnum */
-int strnum_int_length(int number, int partition_size);
+int strnum_int_length(int number);
 
 /** Returns a int number notation formatted string */
-char * strnum_int(int number, int partition_size, char separator);
+char * strnum_int(int number);
 
 /** Returns a double number notation formatted string */
-char * strnum_double(double number, int partition_size, char separator, int decimal_size, char decimal_separator);
+char * strnum_double(double number);
+
+/** Returns a copy of a string */
+char *strnum_str_copy(const char *string);
+
+/** Returns a concatened string of a another 2 strings */
+char *strnum_str_concat(char *first_string, char *second_string, char *concat_format);
 
 /** Returns a date and time formatted string */
 char * strnum_datetime(double datetime);
